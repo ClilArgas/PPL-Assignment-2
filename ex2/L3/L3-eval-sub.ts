@@ -1,6 +1,6 @@
 // L3-eval.ts
 import { map } from "ramda";
-import { ClassExp, isCExp, isClassExp, isLetExp } from "./L3-ast";
+import { ClassExp, isCExp, isClassExp, isLetExp, isVarDecl } from "./L3-ast";
 import {
   BoolExp,
   CExp,
@@ -59,7 +59,12 @@ import {
   allT,
   cons,
 } from "../shared/list";
-import { isBoolean, isNumber, isString } from "../shared/type-predicates";
+import {
+  isArray,
+  isBoolean,
+  isNumber,
+  isString,
+} from "../shared/type-predicates";
 import {
   Result,
   makeOk,
@@ -73,6 +78,7 @@ import { applyPrimitive } from "./evalPrimitive";
 import { parse as p } from "../shared/parser";
 import { Sexp } from "s-expression";
 import { format } from "../shared/format";
+import { get } from "http";
 
 // ========================================================
 // Eval functions
@@ -165,55 +171,30 @@ const applyClass = (proc: Class, args: Value[], env: Env): Result<Value> => {
 };
 
 const applyObject = (proc: Object, args: Value[], env: Env): Result<Value> => {
-  // !isNonEmptyList<Value>(args)
-  //   ? makeFailure("empty args list")
-  //   : proc.avocado.methods.find(
-  //       (b) => b.var.var === valueToString(first(args))
-  //     ) === undefined ||
-  //     !isProcExp(
-  //       proc.avocado.methods.find(
-  //         (b) => b.var.var === valueToString(first(args))
-  //       )
-  //     )
-  //   ? makeFailure("no such method in this class")
-  //   : applyClosure(
-  //       makeClosure(
-  //         proc.avocado.methods.find(
-  //           (b) => b.var.var === valueToString(first(args))
-  //         ),
-
-  //       )
-  //     );
-
-  //       undefined &&
-
   if (isNonEmptyList<Value>(args)) {
     if (
       proc.avocado.methods.find(
         (b) => b.var.var === valueToString(first(args))
       ) === undefined
     )
-      return makeFailure("didnt found methods");
+      return makeFailure(`Unrecognized method: ${valueToString(first(args))}`);
 
     const method = proc.avocado.methods.find(
       (b) => b.var.var === valueToString(first(args))
     );
 
     if (method !== undefined && isProcExp(method?.val)) {
-      const vars = method.val.body.filter(
-        (cexp) =>
-          isVarRef(cexp) &&
-          proc.avocado.fields.find((v) => v.var === cexp.var) !== undefined &&
-          !args.includes(cexp.var)
+      const vars = getUnboundVars(
+        method.val.body,
+        proc.avocado.fields.map((f) => f.var)
       );
-      if (!allT(isString, vars)) {
-        return makeFailure("wrong vars");
-      }
-      const values = proc.args.filter((cexp) => vars.includes(cexp));
+
+      const indexes = proc.avocado.fields
+        .filter((cexp) => isVarDecl(cexp) && vars.includes(cexp.var))
+        .map((v) => proc.avocado.fields.findIndex((f) => f.var === v.var));
+      const values = indexes.map((i) => proc.args[i]);
       const restArgs = rest(args);
-      if (!allT(isSExp, restArgs) || !isNonEmptyList(restArgs)) {
-        return makeFailure("bad");
-      }
+
       return applyClosure(
         makeClosure(method.val.args, substitute(method.val.body, vars, values)),
         restArgs,
@@ -222,6 +203,25 @@ const applyObject = (proc: Object, args: Value[], env: Env): Result<Value> => {
     }
   }
   return makeFailure("empty arguments");
+};
+
+const getUnboundVars = (body: CExp[], params: string[]): string[] => {
+  let unboundVars: string[] = [];
+  const traverse = (exp: CExp | CExp[]) => {
+    if (isVarRef(exp)) {
+      if (params.includes(exp.var)) {
+        unboundVars.push(exp.var);
+      }
+    } else if (isProcExp(exp)) {
+      traverse(exp.body);
+    } else if (isAppExp(exp)) {
+      exp.rands.forEach(traverse);
+    }
+  };
+
+  isArray(body) ? body.forEach(traverse) : traverse(body);
+
+  return unboundVars;
 };
 
 const applyClosure = (

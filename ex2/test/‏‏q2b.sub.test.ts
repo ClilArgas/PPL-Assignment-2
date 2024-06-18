@@ -1,22 +1,20 @@
-import { expect } from 'chai';
-import {  evalL3program } from '../L3/L3-eval-sub';
+import { expect } from "chai";
+import { evalL3program } from "../L3/L3-eval-sub";
 import { SExpValue, Value, valueToString } from "../L3/L3-value";
 import { Result, bind, isOk, makeOk, makeFailure } from "../shared/result";
-import { parseL3} from "../L3/L3-ast";
+import { parseL3 } from "../L3/L3-ast";
 
-
-const evalP = (x: string): Result<Value> =>
-    bind(parseL3(x), evalL3program);
+const evalP = (x: string): Result<Value> => bind(parseL3(x), evalL3program);
 
 const evalP2String = (x: string): string => {
-    const res : Result<SExpValue> = bind(parseL3(x), evalL3program);
-    return isOk(res) ? valueToString(res.value) : res.message;
-}
+  const res: Result<SExpValue> = bind(parseL3(x), evalL3program);
+  return isOk(res) ? valueToString(res.value) : res.message;
+};
 
-describe('Q2B Tests for substitution model', () => {
-    
-    it("Test class definition", () => {
-        expect(evalP2String(`
+describe("Q2B Tests for substitution model", () => {
+  it("Test class definition", () => {
+    expect(
+      evalP2String(`
         (L3
          (define pair 
             (class (a b) 
@@ -28,11 +26,13 @@ describe('Q2B Tests for substitution model', () => {
              )
          )
          pair
-        )`)).to.deep.equal("Class");
-    });
+        )`)
+    ).to.deep.equal("Class");
+  });
 
-    it("Test object definition", () => {
-        expect(evalP2String(`
+  it("Test object definition", () => {
+    expect(
+      evalP2String(`
         (L3
             (define pair 
                (class (a b) 
@@ -46,12 +46,13 @@ describe('Q2B Tests for substitution model', () => {
             (define p34 (pair 3 4))
             p34
         )
-        `)).to.deep.equal("Object");
-    });    
-    
-    it("Test object methods application", () => {
+        `)
+    ).to.deep.equal("Object");
+  });
 
-        expect(evalP(`
+  it("Test object methods application", () => {
+    expect(
+      evalP(`
         (L3
             (define pair 
                (class (a b) 
@@ -65,9 +66,11 @@ describe('Q2B Tests for substitution model', () => {
             (define p34 (pair 3 4))
             (p34 'first)
         )
-        `)).to.deep.equal(makeOk(3));
+        `)
+    ).to.deep.equal(makeOk(3));
 
-        expect(evalP(`
+    expect(
+      evalP(`
         (L3
             (define pair 
                (class (a b) 
@@ -81,9 +84,11 @@ describe('Q2B Tests for substitution model', () => {
             (define p34 (pair 3 4))
             (p34 'second)
         )
-        `)).to.deep.equal(makeOk(4));
+        `)
+    ).to.deep.equal(makeOk(4));
 
-        expect(evalP(`
+    expect(
+      evalP(`
         (L3
             (define pair 
                (class (a b) 
@@ -97,13 +102,13 @@ describe('Q2B Tests for substitution model', () => {
             (define p34 (pair 3 4))
             (p34 'sum)
         )
-        `)).to.deep.equal(makeOk(7));
+        `)
+    ).to.deep.equal(makeOk(7));
+  });
 
-    });    
-
-    it("Test object methods application with parameters", () => {
-
-    expect(evalP(`
+  it("Test object methods application with parameters", () => {
+    expect(
+      evalP(`
     (L3
         (define pair 
            (class (a b) 
@@ -117,13 +122,13 @@ describe('Q2B Tests for substitution model', () => {
         (define p34 (pair 3 4))
         (p34 'f 2)
     )
-    `)).to.deep.equal(makeOk(0.75));
-});
+    `)
+    ).to.deep.equal(makeOk(0.75));
+  });
 
-
-it("Test unknown methods application for substitution model", () => {
-
-    expect(evalP(`
+  it("Test unknown methods application for substitution model", () => {
+    expect(
+      evalP(`
     (L3
         (define pair 
           (class (a b) 
@@ -137,13 +142,13 @@ it("Test unknown methods application for substitution model", () => {
         (define p34 (pair 3 4))
         (p34 'power)
     )
-`)).to.deep.equal(makeFailure("Unrecognized method: power"));
+`)
+    ).to.deep.equal(makeFailure("Unrecognized method: power"));
+  });
 
-});
-
-it("Test unknown field in methods application", () => {
-
-    expect(evalP(`
+  it("Test unknown field in methods application", () => {
+    expect(
+      evalP(`
     (L3
       (define pair 
         (class (a b) 
@@ -157,13 +162,13 @@ it("Test unknown field in methods application", () => {
       (define p34 (pair 3 4))
       (p34 'sum)
     )
-`)).to.deep.equal(makeFailure("var not found: c"));
+`)
+    ).to.deep.equal(makeFailure("var not found: c"));
+  });
 
-});
-
-it("Test nested object methods application", () => {
-
-    expect(evalP(`
+  it("Test nested object methods application", () => {
+    expect(
+      evalP(`
     (L3
         (
          (lambda (obj) (obj 'first))
@@ -179,11 +184,7 @@ it("Test nested object methods application", () => {
          )
        )
     )
-    `)).to.deep.equal(makeOk(3));
-
-
- 
-});
-
-
+    `)
+    ).to.deep.equal(makeOk(3));
+  });
 });
