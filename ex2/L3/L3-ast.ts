@@ -379,7 +379,6 @@ const parseBindings = (bindings: Sexp): Result<Binding[]> => {
   if (!isGoodBindings(bindings)) {
     return makeFailure('Malformed bindings in "class" expression');
   }
-
   const vars = map((b) => b[0], bindings);
   const valsResult = mapResult(
     parseL3CExp,
@@ -395,8 +394,8 @@ const parseClassExp = (fields: Sexp, methods: Sexp): Result<ClassExp> =>
   isNonEmptyList(fields) &&
   allT(isString, fields) &&
   isArray(methods) &&
-  isNonEmptyList(methods[0]) &&
-  methods.length == 1
+  methods.length == 1 &&
+  isNonEmptyList(methods[0])
     ? mapv(parseBindings(methods[0]), (meths: Binding[]) =>
         makeClassExp(map(makeVarDecl, fields), meths)
       )
