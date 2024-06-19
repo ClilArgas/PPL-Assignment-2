@@ -40,6 +40,7 @@ import {
   makeObjectEnv,
   isClass,
   isObject,
+  valueToString,
 } from "./L3-value";
 import { applyPrimitive } from "./evalPrimitive";
 import { allT, first, rest, isEmpty, isNonEmptyList } from "../shared/list";
@@ -101,6 +102,8 @@ const applyProcedure = (proc: Value, args: Value[]): Result<Value> =>
     ? applyClosure(proc, args)
     : isClass(proc)
     ? applyClass(proc, args)
+    : isObject(proc)
+    ? applyObject(proc, args)
     : makeFailure(`Bad procedure ${format(proc)}`);
 
 const applyClosure = (proc: Closure, args: Value[]): Result<Value> => {
@@ -114,6 +117,25 @@ const evalClass = (exp: ClassExp, env: Env): Result<Value> =>
 const applyClass = (proc: Class, args: Value[]): Result<Value> => {
   const vars = map((v: VarDecl) => v.var, proc.fields);
   return makeOk(makeObjectEnv(proc, args, makeExtEnv(vars, args, proc.env)));
+};
+
+const applyObject = (proc: Object, args: Value[]): Result<Value> => {
+  if (!isNonEmptyList<Value>(args)) return makeFailure("Empty args");
+  const methods = proc.avocado.methods.filter(
+    (m) => m.var.var === valueToString(first(args))
+  );
+  console.log(methods);
+  console.log(args);
+  console.log(proc.env);
+  if (!isNonEmptyList<Binding>(methods))
+    return makeFailure(`Unrecognized method: ${valueToString(first(args))}`);
+  const method = first(methods).val;
+  return isProcExp(method)
+    ? applyClosure(
+        makeClosureEnv(method.args, method.body, proc.env),
+        rest(args)
+      )
+    : makeFailure("Method is not a procedure");
 };
 
 // Evaluate a sequence of expressions (in a program)

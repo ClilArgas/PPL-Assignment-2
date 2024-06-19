@@ -79,7 +79,7 @@ export const makeObjectEnv = (
   tag: "Object",
   avocado: avocado,
   args: args,
-  env: makeEmptyEnv(),
+  env: env,
 });
 export const isObject = (x: any): x is Object => x.tag === "Object";
 
