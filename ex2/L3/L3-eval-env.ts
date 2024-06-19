@@ -116,7 +116,9 @@ const evalClass = (exp: ClassExp, env: Env): Result<Value> =>
 
 const applyClass = (proc: Class, args: Value[]): Result<Value> => {
   const vars = map((v: VarDecl) => v.var, proc.fields);
-  return makeOk(makeObjectEnv(proc, args, makeExtEnv(vars, args, proc.env)));
+  return args.length === proc.fields.length
+    ? makeOk(makeObjectEnv(proc, args, makeExtEnv(vars, args, proc.env)))
+    : makeFailure("Invalid number of fields given to the class");
 };
 
 const applyObject = (proc: Object, args: Value[]): Result<Value> => {
