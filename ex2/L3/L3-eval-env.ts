@@ -127,12 +127,14 @@ const applyObject = (proc: Object, args: Value[]): Result<Value> => {
   if (!isNonEmptyList<Binding>(methods))
     return makeFailure(`Unrecognized method: ${valueToString(first(args))}`);
   const method = first(methods).val;
-  return isProcExp(method)
+  return !isProcExp(method)
+    ? makeFailure("Method is not a procedure")
+    : method.args.length === rest(args).length
     ? applyClosure(
         makeClosureEnv(method.args, method.body, proc.env),
         rest(args)
       )
-    : makeFailure("Method is not a procedure");
+    : makeFailure("Invalid number of args given to the function");
 };
 
 // Evaluate a sequence of expressions (in a program)

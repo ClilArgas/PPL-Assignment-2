@@ -192,6 +192,9 @@ const applyObject = (proc: Object, args: Value[], env: Env): Result<Value> => {
     const values = indexes.map((i) => valueToLitExp(proc.args[i]));
 
     const restArgs = rest(args);
+    if (method.val.args.length !== restArgs.length) {
+      return makeFailure("Wrong number of args to the function");
+    }
 
     return applyClosure(
       makeClosure(method.val.args, substitute(method.val.body, vars, values)),
