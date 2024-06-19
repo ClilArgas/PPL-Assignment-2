@@ -124,9 +124,6 @@ const applyObject = (proc: Object, args: Value[]): Result<Value> => {
   const methods = proc.avocado.methods.filter(
     (m) => m.var.var === valueToString(first(args))
   );
-  console.log(methods);
-  console.log(args);
-  console.log(proc.env);
   if (!isNonEmptyList<Binding>(methods))
     return makeFailure(`Unrecognized method: ${valueToString(first(args))}`);
   const method = first(methods).val;
