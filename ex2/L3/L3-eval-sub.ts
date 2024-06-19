@@ -162,67 +162,80 @@ const valueToLitExp = (
     ? makeProcExp(v.params, v.body)
     : makeLitExp(v);
 
-const applyClass = (proc: Class, args: Value[], env: Env): Result<Value> => {
-  if (args.length !== proc.fields.length) {
-    return makeFailure("Invalid number of fields");
-  }
-  const litArgs: CExp[] = map(valueToLitExp, args);
-  return makeOk(makeObject(proc, litArgs));
-};
+const applyClass = (proc: Class, args: Value[], env: Env): Result<Value> =>
+  args.length !== proc.fields.length
+    ? makeFailure("Invalid number of fields")
+    : makeOk(makeObject(proc, args));
 
 const applyObject = (proc: Object, args: Value[], env: Env): Result<Value> => {
-  if (isNonEmptyList<Value>(args)) {
-    if (
-      proc.avocado.methods.find(
-        (b) => b.var.var === valueToString(first(args))
-      ) === undefined
-    )
-      return makeFailure(`Unrecognized method: ${valueToString(first(args))}`);
-
-    const method = proc.avocado.methods.find(
+  if (!isNonEmptyList<Value>(args)) return makeFailure("empty arguments");
+  if (
+    proc.avocado.methods.find(
       (b) => b.var.var === valueToString(first(args))
+    ) === undefined
+  )
+    return makeFailure(`Unrecognized method: ${valueToString(first(args))}`);
+
+  const method = proc.avocado.methods.find(
+    (b) => b.var.var === valueToString(first(args))
+  );
+
+  if (method !== undefined && isProcExp(method?.val)) {
+    const vars = getUnboundVars(
+      method.val.body,
+      proc.avocado.fields.map((f) => f.var)
     );
 
-    if (method !== undefined && isProcExp(method?.val)) {
-      const vars = getUnboundVars(
-        method.val.body,
-        proc.avocado.fields.map((f) => f.var)
-      );
+    const indexes = proc.avocado.fields
+      .filter((cexp) => isVarDecl(cexp) && vars.includes(cexp.var))
+      .map((v) => proc.avocado.fields.findIndex((f) => f.var === v.var));
+    const values = indexes.map((i) => valueToLitExp(proc.args[i]));
+    const restArgs = rest(args);
 
-      const indexes = proc.avocado.fields
-        .filter((cexp) => isVarDecl(cexp) && vars.includes(cexp.var))
-        .map((v) => proc.avocado.fields.findIndex((f) => f.var === v.var));
-      const values = indexes.map((i) => proc.args[i]);
-      const restArgs = rest(args);
-
-      return applyClosure(
-        makeClosure(method.val.args, substitute(method.val.body, vars, values)),
-        restArgs,
-        env
-      );
-    }
+    return applyClosure(
+      makeClosure(method.val.args, substitute(method.val.body, vars, values)),
+      restArgs,
+      env
+    );
   }
-  return makeFailure("empty arguments");
+  return makeFailure("Invalid method");
 };
-
 const getUnboundVars = (body: CExp[], params: string[]): string[] => {
-  let unboundVars: string[] = [];
-  const traverse = (exp: CExp | CExp[]) => {
-    if (isVarRef(exp)) {
-      if (params.includes(exp.var)) {
-        unboundVars.push(exp.var);
-      }
-    } else if (isProcExp(exp)) {
-      traverse(exp.body);
-    } else if (isAppExp(exp)) {
-      exp.rands.forEach(traverse);
-    }
+  const traverse = (exp: CExp | CExp[]): string[] => {
+    return isVarRef(exp)
+      ? params.includes(exp.var)
+        ? [exp.var]
+        : []
+      : isProcExp(exp)
+      ? traverse(exp.body)
+      : isAppExp(exp)
+      ? exp.rands.map(traverse).reduce((acc, val) => acc.concat(val), [])
+      : [];
   };
 
-  isArray(body) ? body.forEach(traverse) : traverse(body);
-
-  return unboundVars;
+  return isArray(body)
+    ? body.map(traverse).reduce((acc, val) => acc.concat(val), [])
+    : traverse(body);
 };
+
+// const getUnboundVars = (body: CExp[], params: string[]): string[] => {
+//   let unboundVars: string[] = [];
+//   const traverse = (exp: CExp | CExp[]) => {
+//     if (isVarRef(exp)) {
+//       if (params.includes(exp.var)) {
+//         unboundVars.push(exp.var);
+//       }
+//     } else if (isProcExp(exp)) {
+//       traverse(exp.body);
+//     } else if (isAppExp(exp)) {
+//       exp.rands.forEach(traverse);
+//     }
+//   };
+
+//   isArray(body) ? body.forEach(traverse) : traverse(body);
+
+//   return unboundVars;
+// };
 
 const applyClosure = (
   proc: Closure,

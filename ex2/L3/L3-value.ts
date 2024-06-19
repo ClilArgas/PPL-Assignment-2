@@ -62,10 +62,10 @@ export const isClass = (x: any): x is Class => x.tag === "Class";
 export type Object = {
   tag: "Object";
   avocado: Class;
-  args: CExp[];
+  args: Value[];
   env: Env;
 };
-export const makeObject = (avocado: Class, args: CExp[]): Object => ({
+export const makeObject = (avocado: Class, args: Value[]): Object => ({
   tag: "Object",
   avocado: avocado,
   args: args,
@@ -73,7 +73,7 @@ export const makeObject = (avocado: Class, args: CExp[]): Object => ({
 });
 export const makeObjectEnv = (
   avocado: Class,
-  args: CExp[],
+  args: Value[],
   env: Env
 ): Object => ({
   tag: "Object",
