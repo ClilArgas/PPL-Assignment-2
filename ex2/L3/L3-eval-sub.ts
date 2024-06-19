@@ -186,10 +186,11 @@ const applyObject = (proc: Object, args: Value[], env: Env): Result<Value> => {
       proc.avocado.fields.map((f) => f.var)
     );
 
-    const indexes = proc.avocado.fields
-      .filter((cexp) => isVarDecl(cexp) && vars.includes(cexp.var))
-      .map((v) => proc.avocado.fields.findIndex((f) => f.var === v.var));
+    const indexes = vars.map((v) =>
+      proc.avocado.fields.findIndex((f) => f.var === v)
+    );
     const values = indexes.map((i) => valueToLitExp(proc.args[i]));
+
     const restArgs = rest(args);
 
     return applyClosure(
