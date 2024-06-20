@@ -222,25 +222,6 @@ const getUnboundVars = (body: CExp[], params: string[]): string[] => {
     : traverse(body);
 };
 
-// const getUnboundVars = (body: CExp[], params: string[]): string[] => {
-//   let unboundVars: string[] = [];
-//   const traverse = (exp: CExp | CExp[]) => {
-//     if (isVarRef(exp)) {
-//       if (params.includes(exp.var)) {
-//         unboundVars.push(exp.var);
-//       }
-//     } else if (isProcExp(exp)) {
-//       traverse(exp.body);
-//     } else if (isAppExp(exp)) {
-//       exp.rands.forEach(traverse);
-//     }
-//   };
-
-//   isArray(body) ? body.forEach(traverse) : traverse(body);
-
-//   return unboundVars;
-// };
-
 const applyClosure = (
   proc: Closure,
   args: Value[],

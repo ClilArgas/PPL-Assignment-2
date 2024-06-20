@@ -183,7 +183,12 @@ export const isExp = (x: any): x is Exp => isDefineExp(x) || isCExp(x);
 export const isAtomicExp = (x: any): x is AtomicExp =>
   isNumExp(x) || isBoolExp(x) || isStrExp(x) || isPrimOp(x) || isVarRef(x);
 export const isCompoundExp = (x: any): x is CompoundExp =>
-  isAppExp(x) || isIfExp(x) || isProcExp(x) || isLitExp(x) || isLetExp(x);
+  isAppExp(x) ||
+  isIfExp(x) ||
+  isProcExp(x) ||
+  isLitExp(x) ||
+  isLetExp(x) ||
+  isClassExp(x);
 export const isCExp = (x: any): x is CExp => isAtomicExp(x) || isCompoundExp(x);
 
 // ========================================================
